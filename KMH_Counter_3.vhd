@@ -39,10 +39,9 @@ architecture RTL of KMH_Counter_3 is
 
     signal w_Switch_4 : std_logic;
 
-    signal r_Count_Low : integer range 0 to 9 := 0;
-    signal r_Count_High : integer range 0 to 5 := 0;
     signal w_Counter_Clk : std_logic;
-    signal r_Counter_Clk : std_logic := '0';
+    signal w_Count_Low   : integer range 0 to 9;
+    signal w_Count_High  : integer range 0 to 9;
 
     signal w_Brightness : std_logic;
 
@@ -111,26 +110,15 @@ begin
     w_Counter_Clk <= (i_Switch_1 and w_Fast) or (not i_Switch_1 and w_1HZ);
 
     --
-    -- Build the counter
+    -- Instantiate the counter
     --
-    p_60Counter : process(i_Clk)
-    begin
-   		if rising_edge(i_Clk) then
-			r_Counter_Clk <= w_Counter_Clk;
-			
-			if (w_Counter_Clk = '1' and r_Counter_Clk = '0') then
-				if (r_Count_Low = 9) and (r_Count_High = 5) then
-					r_Count_Low <= 0;
-                    r_Count_High <= 0;
-				elsif r_Count_Low = 9 then
-					r_Count_Low <= 0;
-                    r_Count_High <= r_Count_High + 1;
-                else
-                    r_Count_Low <= r_Count_Low + 1;
-				end if;
-			end if;			
-		end if;		
-    end process;
+    Counter_Inst: entity work.BCD_Counter
+    port map (
+        i_Clk => i_Clk,
+        i_Pulse => w_Counter_Clk,
+        o_Low_Byte => w_Count_Low,
+        o_High_Byte => w_Count_High
+    );
 
     --
     -- Instantiate two nibble decoders
@@ -138,7 +126,7 @@ begin
     SevenSeg1_Low_Inst : entity work.Binary_To_7Segment
 		port map (
 			i_Clk 			=> i_Clk,
-			i_Binary_Num	=> std_logic_vector(to_unsigned(r_Count_Low, 4)),
+			i_Binary_Num	=> std_logic_vector(to_unsigned(w_Count_Low, 4)),
 			o_Segment_A		=> w_Segment2_A,
 			o_Segment_B		=> w_Segment2_B,
 			o_Segment_C		=> w_Segment2_C,
@@ -150,7 +138,7 @@ begin
     SevenSeg1_High_Inst : entity work.Binary_To_7Segment
 		port map (
 			i_Clk 			=> i_Clk,
-			i_Binary_Num	=> std_logic_vector(to_unsigned(r_Count_High, 4)),
+			i_Binary_Num	=> std_logic_vector(to_unsigned(w_Count_High, 4)),
 			o_Segment_A		=> w_Segment1_A,
 			o_Segment_B		=> w_Segment1_B,
 			o_Segment_C		=> w_Segment1_C,
@@ -181,9 +169,9 @@ begin
     --
     -- Keep the LEDs from floating
     --
-    o_LED_1 <= '1' and w_Brightness;
-    o_LED_2 <= '1' and w_Brightness;
-    o_LED_3 <= '1' and w_Brightness;
-    o_LED_4 <= '1' and w_Brightness;
+    o_LED_1 <= '0' and w_Brightness;
+    o_LED_2 <= '0' and w_Brightness;
+    o_LED_3 <= '0' and w_Brightness;
+    o_LED_4 <= '0' and w_Brightness;
 
 end RTL;

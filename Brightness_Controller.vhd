@@ -13,6 +13,11 @@ end Brightness_Controller;
 architecture RTL of Brightness_Controller is
     type t_SM_Main is (s_Low, s_Med, s_High, s_Max);
 
+    constant c_Level_Max  : integer := 7;
+    constant c_Level_High : integer := 3;
+    constant c_Level_Med  : integer := 1;
+    constant c_Level_Low  : integer := 0;
+
     signal r_Select : std_logic := '0';
     signal r_Brightness : t_SM_Main := s_Max;           -- selected brightness state
     signal r_Level : integer range 0 to 7 := 0;         -- selected brightness level
@@ -30,19 +35,23 @@ begin
 		
 			if i_Select = '0' and r_Select = '1' then  -- switch released\
                 -- next brightness (dimness) level
-                case r_Brightness is
-                    when s_Low  => r_Brightness <= s_Max;
-                    when s_Med  => r_Brightness <= s_Low;
-                    when s_High => r_Brightness <= s_Med;
-                    when s_Max  => r_Brightness <= s_High;
-                end case;
-
                 -- counter value for each level
                 case r_Brightness is
-                    when s_Low  => r_Level <= 0;
-                    when s_Med  => r_Level <= 1;
-                    when s_High => r_Level <= 2;
-                    when s_Max  => r_Level <= 7;
+                    when s_Low  => 
+                        r_Brightness <= s_Max;
+                        r_Level <= c_Level_Max;
+                    when s_Med  => 
+                        r_Brightness <= s_Low;
+                        r_Level <= c_Level_Low;
+                    when s_High => 
+                        r_Brightness <= s_Med;
+                        r_Level <= c_Level_Med;
+                    when s_Max  => 
+                        r_Brightness <= s_High;
+                        r_Level <= c_Level_High;
+                    when others => 
+                        r_Brightness <= s_Max;
+                        r_Level <= c_Level_Max;
                 end case;
 			end if;
 		end if;
