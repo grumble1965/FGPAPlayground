@@ -3,6 +3,10 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity BCD_Counter is
+    generic (
+        g_LOW_LIMIT  : natural := 9;
+        g_HIGH_LIMIT : natural := 5
+    );
     port (
         i_Clk       : in std_logic;
         i_Carry_In  : in std_logic;
@@ -24,11 +28,11 @@ begin
 			r_Carry_In <= i_Carry_In;
 			
 			if (i_Carry_In = '1' and r_Carry_In = '0') then
-				if (r_Count_High = 5) and (r_Count_Low = 9) then
+				if (r_Count_High = g_HIGH_LIMIT) and (r_Count_Low = g_LOW_LIMIT) then
                     o_Carry_Out <= '1';
 					r_Count_Low <= 0;
                     r_Count_High <= 0;
-				elsif r_Count_Low = 9 then
+				elsif r_Count_Low = g_LOW_LIMIT then
                     o_Carry_Out <= '0';
 					r_Count_Low <= 0;
                     r_Count_High <= r_Count_High + 1;

@@ -29,9 +29,9 @@ entity KMH_Counter_4 is
         o_Segment2_F    : out std_logic;
         o_Segment2_G    : out std_logic
     );
-end KMH_Counter_3;
+end KMH_Counter_4;
 
-architecture RTL of KMH_Counter_3 is
+architecture RTL of KMH_Counter_4 is
 
     signal w_1HZ : std_logic;
     signal w_Fast : std_logic;
