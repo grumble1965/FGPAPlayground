@@ -5,8 +5,8 @@ use ieee.numeric_std.all;
 entity KMH_Counter_4 is
     port (
         i_Clk           : in std_logic;
-        i_Switch_1      : in std_logic;
-        i_Switch_4      : in std_logic;
+        i_Switch_1      : in std_logic;     -- fast / slow clock select
+        i_Switch_4      : in std_logic;     -- brightness select
 
         o_LED_1         : out std_logic;
         o_LED_2         : out std_logic;
@@ -33,9 +33,9 @@ end KMH_Counter_4;
 
 architecture RTL of KMH_Counter_4 is
 
-    signal w_1HZ : std_logic;
-    signal w_Fast : std_logic;
-    signal w_PWM_Clk : std_logic;
+    signal w_1HZ : std_logic;           -- slow (normal) clock for counter
+    signal w_Fast : std_logic;          -- fast clock for counter
+    signal w_PWM_Clk : std_logic;       --  clock for PWM brightness control
 
     signal w_Switch_4 : std_logic;
 
@@ -43,7 +43,11 @@ architecture RTL of KMH_Counter_4 is
     signal w_Count_Low   : integer range 0 to 9;
     signal w_Count_High  : integer range 0 to 9;
 
-    signal w_Brightness : std_logic;
+    signal w_Carry : std_logic;
+    signal r_Carry : std_logic := '0';
+    signal r_LED_1 : std_logic := '0';
+
+    signal w_Brightness : std_logic;    -- PWM signal from brightness controller
 
    	signal w_Segment1_A : std_logic;
 	signal w_Segment1_B : std_logic;
@@ -72,7 +76,7 @@ begin
     Clk_Gen_Inst : entity work.Clock_Generator
         generic map (
             g_COUNT_OUT1 => 1250000,    -- 25e6 Hz / 1.25e6 = 20 toggles / Hz = 10 Hz clock
-            g_COUNT_OUT2 => 12500,      -- 25e6 Hz / 12.5e3 = 2K toggles / Hz = 1 KiloHz clock
+            g_COUNT_OUT2 => 12500,      -- 25e6 Hz / 12.5e3 = 2K toggles / Hz = 1 Kilo Hz clock
             g_COUNT_OUT3 => 6250000,    -- 25e6 Hz / 6.25e6 = 4 toggles / Hz = 2 Hz clock
             g_COUNT_OUT4 => 12500000)   -- 25e6 Hz / 12.5e6 = 2 toggles / Hz = 1 Hz clock
         port map (
@@ -118,8 +122,18 @@ begin
         i_Carry_In  => w_Counter_Clk,
         o_Low_Byte  => w_Count_Low,
         o_High_Byte => w_Count_High,
-        o_Carry_Out => o_LED_1
+        o_Carry_Out => w_Carry
     );
+
+    p_Carry : process(i_Clk)
+    begin
+        if rising_edge(i_Clk) then
+            r_Carry <= w_Carry;
+            if w_Carry = '1' and r_Carry = '0' then
+                r_LED_1 <= not r_LED_1;
+            end if;
+        end if;
+    end process;
 
     --
     -- Instantiate two nibble decoders
@@ -150,6 +164,7 @@ begin
 
     --
     -- Seven Segment LEDs are active low
+    --   Use the PWM signal for brightness level
     --
 	o_Segment1_A <= not (w_Segment1_A and w_Brightness);
 	o_Segment1_B <= not (w_Segment1_B and w_Brightness);
@@ -170,7 +185,7 @@ begin
     --
     -- Keep the LEDs from floating
     --
-    -- o_LED_1 <= '0' and w_Brightness;
+    o_LED_1 <= r_LED_1 and w_Brightness;
     o_LED_2 <= '0' and w_Brightness;
     o_LED_3 <= '0' and w_Brightness;
     o_LED_4 <= '0' and w_Brightness;
